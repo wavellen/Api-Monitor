@@ -3,6 +3,7 @@ import type { CreateMonitorBody, UpdateMonitorBody } from '../types';
 import * as monitorService from '../services/monitor.service';
 import { scheduleMonitor, removeMonitor } from '../queues/monitor.queue';
 import { handleServiceError } from '../utils/error';
+import { addClient, removeClient, clearMonitorClients } from '../sse/sse.manager';
 
 export async function createMonitorHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
@@ -47,6 +48,29 @@ export async function getMonitorHandler(request: FastifyRequest, reply: FastifyR
   }
 }
 
+export async function streamMonitorHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  try {
+    const { monitorId } = request.params as { monitorId: string };
+    await monitorService.getMonitorById(request.user.userId, monitorId);
+
+    reply.raw.setHeader('Content-Type', 'text/event-stream');
+    reply.raw.setHeader('Cache-Control', 'no-cache');
+    reply.raw.setHeader('Connection', 'keep-alive');
+    reply.raw.flushHeaders();
+
+    reply.raw.write('data: {"type":"connected"}\n\n');
+
+    addClient(monitorId, reply);
+
+    request.raw.on('close', () => removeClient(monitorId, reply));
+
+    // TODO Layer 12: implement 30s heartbeat interval
+    // clear interval on request.raw 'close' event
+  } catch (error: unknown) {
+    handleServiceError(reply, error);
+  }
+}
+
 export async function updateMonitorHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
     const { monitorId } = request.params as { monitorId: string };
@@ -80,6 +104,7 @@ export async function updateMonitorHandler(request: FastifyRequest, reply: Fasti
 export async function deleteMonitorHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
     const { monitorId } = request.params as { monitorId: string };
+    clearMonitorClients(monitorId);
     await monitorService.deleteMonitor(request.user.userId, monitorId);
 
     try {

@@ -2,24 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import type { CreateMonitorBody, UpdateMonitorBody } from '../types';
 import * as monitorService from '../services/monitor.service';
 import { scheduleMonitor, removeMonitor } from '../queues/monitor.queue';
-
-const ERROR_MAP: Record<string, { status: number; label: string }> = {
-  'Monitor not found': { status: 404, label: 'Not Found' },
-  'Monitor limit reached': { status: 429, label: 'Too Many Requests' },
-};
-
-function handleServiceError(reply: FastifyReply, error: unknown): void {
-  if (error instanceof Error && ERROR_MAP[error.message]) {
-    const { status, label } = ERROR_MAP[error.message];
-    reply.status(status).send({
-      statusCode: status,
-      error: label,
-      message: error.message,
-    });
-  } else {
-    throw error;
-  }
-}
+import { handleServiceError } from '../utils/error';
 
 export async function createMonitorHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {

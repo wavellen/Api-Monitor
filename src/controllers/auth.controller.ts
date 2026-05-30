@@ -1,26 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import type { RegisterBody, LoginBody } from '../types';
 import { registerUser, loginUser, logoutUser, refreshTokens } from '../services/auth.service';
-
-const ERROR_MAP: Record<string, { status: number; label: string }> = {
-  'Email already exists': { status: 409, label: 'Conflict' },
-  'Username already exists': { status: 409, label: 'Conflict' },
-  'Invalid credentials': { status: 401, label: 'Unauthorized' },
-  'Invalid token': { status: 401, label: 'Unauthorized' },
-};
-
-function handleServiceError(reply: FastifyReply, error: unknown): void {
-  if (error instanceof Error && ERROR_MAP[error.message]) {
-    const { status, label } = ERROR_MAP[error.message];
-    reply.status(status).send({
-      statusCode: status,
-      error: label,
-      message: error.message,
-    });
-  } else {
-    throw error;
-  }
-}
+import { handleServiceError } from '../utils/error';
 
 export async function registerHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {

@@ -5,7 +5,16 @@ import * as checkService from '../services/check.service';
 const querySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(50),
-});
+  from: z.coerce.date()
+    .optional()
+    .refine(d => d === undefined || !isNaN(d.getTime()), { message: 'Invalid date' }),
+  to: z.coerce.date()
+    .optional()
+    .refine(d => d === undefined || !isNaN(d.getTime()), { message: 'Invalid date' }),
+}).refine(data => {
+  if (data.from && data.to) return data.from <= data.to;
+  return true;
+}, { message: 'from must be before to', path: ['from'] });
 
 const ERROR_MAP: Record<string, { status: number; label: string }> = {
   'Monitor not found': { status: 404, label: 'Not Found' },
@@ -29,7 +38,7 @@ export async function getChecksHandler(request: FastifyRequest, reply: FastifyRe
   try {
     const { monitorId } = request.params as { monitorId: string };
     const query = querySchema.parse(request.query);
-    const result = await checkService.getChecks(monitorId, request.user.userId, query.page, query.limit);
+    const result = await checkService.getChecks(monitorId, request.user.userId, query.page, query.limit, query.from, query.to);
     reply.send(result);
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {

@@ -33,6 +33,15 @@ export interface Check {
   checked_at: Date;
 }
 
+export interface CheckResponse {
+  id: string;
+  status: CheckStatus;
+  response_time_ms: number | null;
+  failure_reason: string | null;
+  status_code_received: number | null;
+  checked_at: Date;
+}
+
 export interface Alert {
   id: string;
   monitor_id: string;
@@ -82,7 +91,7 @@ export interface MonitorResponse {
 }
 
 export interface PaginatedChecks {
-  data: Check[];
+  data: CheckResponse[];
   pagination: {
     total: number;
     page: number;

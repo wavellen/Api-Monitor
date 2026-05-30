@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import * as checkService from '../services/check.service';
+import * as alertService from '../services/alert.service';
 import { handleServiceError } from '../utils/error';
 
 const querySchema = z.object({
@@ -17,11 +17,11 @@ const querySchema = z.object({
   return true;
 }, { message: 'from must be before to', path: ['from'] });
 
-export async function getChecksHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+export async function getAlertsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
     const { monitorId } = request.params as { monitorId: string };
     const query = querySchema.parse(request.query);
-    const result = await checkService.getChecks(monitorId, request.user.userId, query.page, query.limit, query.from, query.to);
+    const result = await alertService.getAlerts(monitorId, request.user.userId, query.page, query.limit, query.from, query.to);
     reply.send(result);
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
@@ -36,11 +36,21 @@ export async function getChecksHandler(request: FastifyRequest, reply: FastifyRe
   }
 }
 
-export async function getCheckHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+export async function getAlertHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
-    const { monitorId, checkId } = request.params as { monitorId: string; checkId: string };
-    const check = await checkService.getCheckById(monitorId, checkId, request.user.userId);
-    reply.send(check);
+    const { monitorId, alertId } = request.params as { monitorId: string; alertId: string };
+    const alert = await alertService.getAlertById(monitorId, alertId, request.user.userId);
+    reply.send(alert);
+  } catch (error: unknown) {
+    handleServiceError(reply, error);
+  }
+}
+
+export async function resolveAlertHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  try {
+    const { monitorId, alertId } = request.params as { monitorId: string; alertId: string };
+    const alert = await alertService.resolveAlert(monitorId, alertId, request.user.userId);
+    reply.send(alert);
   } catch (error: unknown) {
     handleServiceError(reply, error);
   }

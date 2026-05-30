@@ -49,6 +49,22 @@ export interface Alert {
   resolved_at: Date | null;
 }
 
+export interface AlertResponse {
+  id: string;
+  monitor_id: string;
+  triggered_at: Date;
+  resolved_at: Date | null;
+}
+
+export interface PaginatedAlerts {
+  data: AlertResponse[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+  };
+}
+
 export interface RegisterBody {
   email: string;
   username: string;

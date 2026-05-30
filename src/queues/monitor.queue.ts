@@ -8,6 +8,8 @@ export async function scheduleMonitor(monitorId: string, intervalSeconds: number
   await monitorQueue.add('check', { monitorId }, {
     jobId: `monitor:${monitorId}`,
     repeat: { every: intervalSeconds * 1000 },
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 1000 },
   });
 }
 

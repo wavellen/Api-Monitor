@@ -81,3 +81,13 @@ export async function deleteMonitor(userId: string, monitorId: string): Promise<
     throw new Error('Monitor not found');
   }
 }
+
+export async function getMonitorForWorker(
+  monitorId: string,
+): Promise<{ id: string; url: string; expected_status_code: number; check_interval_seconds: number } | null> {
+  const [monitor] = await sql<[{ id: string; url: string; expected_status_code: number; check_interval_seconds: number }]>`
+    SELECT id, url, expected_status_code, check_interval_seconds
+    FROM monitors WHERE id = ${monitorId} AND is_active = true
+  `;
+  return monitor ?? null;
+}

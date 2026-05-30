@@ -95,3 +95,18 @@ export async function resolveAlert(
   if (!existing) throw new Error('Alert not found');
   throw new Error('Alert already resolved');
 }
+
+export async function getOpenAlert(monitorId: string): Promise<{ id: string } | null> {
+  const [alert] = await sql<[{ id: string }]>`
+    SELECT id FROM alerts WHERE monitor_id = ${monitorId} AND resolved_at IS NULL LIMIT 1
+  `;
+  return alert ?? null;
+}
+
+export async function createAlert(monitorId: string): Promise<void> {
+  await sql`INSERT INTO alerts (monitor_id) VALUES (${monitorId})`;
+}
+
+export async function autoResolveAlert(alertId: string): Promise<void> {
+  await sql`UPDATE alerts SET resolved_at = NOW() WHERE id = ${alertId}`;
+}

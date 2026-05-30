@@ -4,6 +4,7 @@ import { redis } from '../config/redis';
 import { getMonitorForWorker } from '../services/monitor.service';
 import { createCheck, getLastNChecks } from '../services/check.service';
 import { getOpenAlert, createAlert, autoResolveAlert } from '../services/alert.service';
+import { broadcast } from '../sse/sse.manager';
 
 export function startWorker(): Worker {
   const worker = new Worker('monitor-checks', async (job) => {
@@ -45,13 +46,28 @@ export function startWorker(): Worker {
         status_code_received: statusCodeReceived, failure_reason: failureReason,
       });
 
+      try {
+        broadcast(monitorId, {
+          status,
+          checkedAt: new Date().toISOString(),
+          responseTimeMs,
+          statusCodeReceived,
+        });
+      } catch (err) {
+        console.error('SSE check broadcast failed', monitorId, err);
+      }
+
       if (status === 'down') {
         const lastThree = await getLastNChecks(monitorId, 3);
         if (lastThree.length === 3 && lastThree.every(c => c.status === 'down')) {
           const open = await getOpenAlert(monitorId);
           if (!open) {
             await createAlert(monitorId);
-            // TODO Layer 11: sseManager.broadcast(monitorId, { status: 'down', checkedAt: new Date().toISOString() })
+            try {
+              broadcast(monitorId, { status: 'down', checkedAt: new Date().toISOString() });
+            } catch (broadcastErr) {
+              console.error('SSE broadcast failed for monitor', monitorId, broadcastErr);
+            }
           }
         }
       }
@@ -60,7 +76,11 @@ export function startWorker(): Worker {
         const open = await getOpenAlert(monitorId);
         if (open) {
           await autoResolveAlert(open.id);
-          // TODO Layer 11: sseManager.broadcast(monitorId, { status: 'up', checkedAt: new Date().toISOString() })
+          try {
+            broadcast(monitorId, { status: 'up', checkedAt: new Date().toISOString() });
+          } catch (broadcastErr) {
+            console.error('SSE broadcast failed for monitor', monitorId, broadcastErr);
+          }
         }
       }
     } catch (err) {

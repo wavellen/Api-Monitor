@@ -50,4 +50,5 @@ export default async function monitorRoutes(app: FastifyInstance): Promise<void>
   app.post('/monitors', { preHandler: [authenticateRequest, validateCreateMonitor] }, monitorController.createMonitorHandler);
   app.patch('/monitors/:monitorId', { preHandler: [authenticateRequest, validateUpdateMonitor] }, monitorController.updateMonitorHandler);
   app.delete('/monitors/:monitorId', { preHandler: [authenticateRequest] }, monitorController.deleteMonitorHandler);
+  app.get('/monitors/:monitorId/stream', { preHandler: [authenticateRequest] }, monitorController.streamMonitorHandler);
 }

@@ -1,5 +1,5 @@
 import { sql } from '../config/db';
-import type { Check, CheckResponse, PaginatedChecks } from '../types';
+import type { Check, CheckResponse, CheckStatus, PaginatedChecks } from '../types';
 
 export async function getChecks(
   monitorId: string,
@@ -66,4 +66,28 @@ export async function getCheckById(
 
   if (!row) throw new Error('Check not found');
   return row;
+}
+
+export async function createCheck(data: {
+  monitor_id: string;
+  status: CheckStatus;
+  response_time_ms: number | null;
+  status_code_received: number | null;
+  failure_reason: string | null;
+}): Promise<void> {
+  await sql`
+    INSERT INTO checks (monitor_id, status, response_time_ms, status_code_received, failure_reason)
+    VALUES (${data.monitor_id}, ${data.status}, ${data.response_time_ms}, ${data.status_code_received}, ${data.failure_reason})
+  `;
+}
+
+export async function getLastNChecks(
+  monitorId: string,
+  n: number,
+): Promise<{ status: CheckStatus }[]> {
+  return sql<{ status: CheckStatus }[]>`
+    SELECT status FROM checks
+    WHERE monitor_id = ${monitorId}
+    ORDER BY checked_at DESC LIMIT ${n}
+  `;
 }

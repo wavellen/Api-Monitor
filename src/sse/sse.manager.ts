@@ -3,10 +3,9 @@ import { FastifyReply } from 'fastify';
 const clients = new Map<string, Set<FastifyReply>>();
 
 export function addClient(monitorId: string, reply: FastifyReply): void {
-  if (!clients.has(monitorId)) {
-    clients.set(monitorId, new Set());
-  }
-  clients.get(monitorId)!.add(reply);
+  const set = clients.get(monitorId) ?? new Set<FastifyReply>();
+  clients.set(monitorId, set);
+  set.add(reply);
 }
 
 export function removeClient(monitorId: string, reply: FastifyReply): void {

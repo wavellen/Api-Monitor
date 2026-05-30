@@ -104,8 +104,8 @@ export async function updateMonitorHandler(request: FastifyRequest, reply: Fasti
 export async function deleteMonitorHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
     const { monitorId } = request.params as { monitorId: string };
-    clearMonitorClients(monitorId);
     await monitorService.deleteMonitor(request.user.userId, monitorId);
+    clearMonitorClients(monitorId);
 
     try {
       await removeMonitor(monitorId);

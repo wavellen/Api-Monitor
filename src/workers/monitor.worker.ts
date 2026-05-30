@@ -46,6 +46,17 @@ export function startWorker(): Worker {
         status_code_received: statusCodeReceived, failure_reason: failureReason,
       });
 
+      try {
+        broadcast(monitorId, {
+          status,
+          checkedAt: new Date().toISOString(),
+          responseTimeMs,
+          statusCodeReceived,
+        });
+      } catch (err) {
+        console.error('SSE check broadcast failed', monitorId, err);
+      }
+
       if (status === 'down') {
         const lastThree = await getLastNChecks(monitorId, 3);
         if (lastThree.length === 3 && lastThree.every(c => c.status === 'down')) {
